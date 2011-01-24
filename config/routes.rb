@@ -11,15 +11,14 @@ Rails.application.routes.draw do
   end
 
   match '/paypal_notify' => 'paypal_express_callbacks#notify', :via => [:get, :post]
-  
-  resources :paypal_express_callbacks
+
   namespace :admin do
     resources :orders do
       resources :paypal_payments do
         member do
           get :refund
           get :capture
-        end       
+        end
       end
     end
   end

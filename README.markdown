@@ -11,6 +11,7 @@ This extension allows the store to use PayPal Express from two locations:
   sent to the PayPal review page (along with detailed order information).
 
   THIS FEATURE IS NOT YET COMPLETE
+
   2. Cart Checkout - Presents the PayPal checkout button on the users Cart page and redirects the user to complete all shipping / addressing
   information on PaypPal's site. This also supports PayPal's Instant Update feature to retrieve shipping options live from Spree when the user
   selects / changes their shipping address on PayPal's site.
@@ -23,17 +24,7 @@ USAGE (Checkout Payment)
 ========================
 
 1. Setup your application
-
-        cp config/database.yml.example config/database.yml
-        rake db:bootstrap
-  
-    Go ahead and load sample data
-
-    Fire it up to see that it works
-
-    Shut it down
-
-
+     
 2. Configure PPE
 
     You'll need to have a Paypal developer account (developer.paypal.com) and both buyer and seller test accounts.
@@ -124,7 +115,7 @@ USAGE (Checkout Payment)
 NOTES
 =====
     
-To automatically capture funds, add this to you site extension's activate method:
+To automatically capture funds or enable accepting eCheck payments, add this to you site extension's activate method:
 
     if Spree::Config.instance
       Spree::Config.set(:auto_capture => true)

@@ -1,5 +1,7 @@
 ---
 en:
+  ipn_transaction: IPN Transaction
+  unknown_transaction: Unknown Transaction
   edit_paypal_info: Edit Paypal Express Payment
   paypal_payment: Paypal Express Payment
   paypal_txn_id: Transaction Code

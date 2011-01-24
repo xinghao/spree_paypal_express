@@ -1,31 +1,25 @@
-# aim to unpick this later
-module Spree::PaypalExpress
-  include ERB::Util
-  include ActiveMerchant::RequiresParameters
-
-  def self.included(target)
-    target.before_filter :redirect_to_paypal_express_form_if_needed, :only => [:update]
-  end
+CheckoutController.class_eval do
+  before_filter :redirect_to_paypal_express_form_if_needed, :only => [:update]
 
   def paypal_checkout
     load_order
     opts = all_opts(@order, params[:payment_method_id], 'checkout')
     opts.merge!(address_options(@order))
-    gateway = paypal_gateway
+    @gateway = paypal_gateway
 
     if Spree::Config[:auto_capture]
-      response = gateway.setup_purchase(opts[:money], opts)
+      @ppx_response = @gateway.setup_purchase(opts[:money], opts)
     else
-      response = gateway.setup_authorization(opts[:money], opts)
+      @ppx_response = @gateway.setup_authorization(opts[:money], opts)
     end
 
-    unless response.success?
-      gateway_error(response)
+    unless @ppx_response.success?
+      gateway_error(@ppx_response)
       redirect_to edit_order_url(@order)
       return
     end
 
-    redirect_to (gateway.redirect_url_for response.token, :review => payment_method.preferred_review)
+    redirect_to (@gateway.redirect_url_for response.token, :review => payment_method.preferred_review)
   rescue ActiveMerchant::ConnectionError => e
     gateway_error I18n.t(:unable_to_connect_to_gateway)
     redirect_to :back
@@ -35,21 +29,21 @@ module Spree::PaypalExpress
     load_order
     opts = all_opts(@order,params[:payment_method_id], 'payment')
     opts.merge!(address_options(@order))
-    gateway = paypal_gateway
+    @gateway = paypal_gateway
 
     if Spree::Config[:auto_capture]
-      response = gateway.setup_purchase(opts[:money], opts)
+      @ppx_response = @gateway.setup_purchase(opts[:money], opts)
     else
-      response = gateway.setup_authorization(opts[:money], opts)
+      @ppx_response = @gateway.setup_authorization(opts[:money], opts)
     end
 
-    unless response.success?
-      gateway_error(response)
+    unless @ppx_response.success?
+      gateway_error(@ppx_response)
       redirect_to edit_order_checkout_url(@order, :state => "payment")
       return
     end
 
-    redirect_to (gateway.redirect_url_for response.token, :review => payment_method.preferred_review)
+    redirect_to (@gateway.redirect_url_for @ppx_response.token, :review => payment_method.preferred_review)
   rescue ActiveMerchant::ConnectionError => e
     gateway_error I18n.t(:unable_to_connect_to_gateway)
     redirect_to :back
@@ -126,10 +120,9 @@ module Spree::PaypalExpress
       ppx_auth_response = gateway.authorize((@order.total*100).to_i, opts)
     end
 
-    if ppx_auth_response.success?
-      paypal_account = PaypalAccount.find_by_payer_id(params[:PayerID])
+    paypal_account = PaypalAccount.find_by_payer_id(params[:PayerID])
 
-      payment = @order.payments.create(
+    payment = @order.payments.create(
       :amount => ppx_auth_response.params["gross_amount"].to_f,
       :source => paypal_account,
       :source_type => 'PaypalAccount',
@@ -137,23 +130,22 @@ module Spree::PaypalExpress
       :response_code => ppx_auth_response.params["ack"],
       :avs_response => ppx_auth_response.avs_result["code"])
 
-      # transition through the state machine.  This way any callbacks can be made
-      payment.started_processing!
-      payment.pend!
+    payment.started_processing!
 
+    record_log payment, ppx_auth_response
+
+    if ppx_auth_response.success?
       #confirm status
       case ppx_auth_response.params["payment_status"]
       when "Completed"
         payment.complete!
       when "Pending"
+        payment.pend!
       else
+        payment.pend!
         Rails.logger.error "Unexpected response from PayPal Express"
         Rails.logger.error ppx_auth_response.to_yaml
       end
-
-      record_log payment, ppx_auth_response
-
-      @order.save!
 
       #need to force checkout to complete state
       until @order.state == "complete"
@@ -166,6 +158,7 @@ module Spree::PaypalExpress
       redirect_to completion_route
 
     else
+      payment.fail!
       order_params = {}
       gateway_error(ppx_auth_response)
 
@@ -207,7 +200,7 @@ module Spree::PaypalExpress
     { :description             => "Goods from #{Spree::Config[:site_name]}", # site details...
 
       #:page_style             => "foobar", # merchant account can set named config
-      :header_image            => "https://" + Spree::Config[:site_url] + "/images/logo.png",
+      :header_image            => "https://#{Spree::Config[:site_name]}/images/logo.png",
       :background_color        => "ffffff",  # must be hex only, six chars
       :header_background_color => "ffffff",
       :header_border_color     => "ffffff",
@@ -252,43 +245,33 @@ module Spree::PaypalExpress
     end
 
     credits_total = 0
-     credits.compact!
-     if !credits.empty?
-       items.concat credits
-       credits_total = credits.map {|i| i[:amount] * i[:qty] }.sum
-     end
+    credits.compact!
+    if credits.present?
+      items.concat credits
+      credits_total = credits.map {|i| i[:amount] * i[:qty] }.sum
+    end
 
     opts = { :return_url        => request.protocol + request.host_with_port + "/orders/#{order.number}/checkout/paypal_confirm?payment_method_id=#{payment_method}",
              :cancel_return_url => "http://"  + request.host_with_port + "/orders/#{order.number}/edit",
              :order_id          => order.number,
              :custom            => order.number,
-             :items             => items
-           }
+             :items             => items,
+             :subtotal          => ((order.item_total * 100) + credits_total).to_i,
+             :tax               => ((order.adjustments.map { |a| a.amount if ( a.source_type == 'Order' && a.label == 'Tax') }.compact.sum) * 100 ).to_i,
+             :shipping          => ((order.adjustments.map { |a| a.amount if a.source_type == 'Shipment' }.compact.sum) * 100 ).to_i,
+             :money             => (order.total * 100 ).to_i }
+
 
     if stage == "checkout"
-      # recalculate all totals here as we need to ignore shipping & tax because we are checking-out via paypal (spree checkout not started)
-      opts[:subtotal] = ((order.item_total * 100) + credits_total ).to_i
       opts[:handling] = 0
-      opts[:tax] = ((order.adjustments.map { |a| a.amount if ( a.source_type == 'Order' && a.label == 'Tax') }.compact.sum) * 100 ).to_i
-      opts[:shipping] = ((order.adjustments.map { |a| a.amount if a.source_type == 'Shipment' }.compact.sum) * 100 ).to_i
-
-      # overall total
-      opts[:money] = (order.total * 100 ).to_i
 
       opts[:callback_url] = "http://"  + request.host_with_port + "/paypal_express_callbacks/#{order.number}"
       opts[:callback_timeout] = 3
-    elsif  stage == "payment"
-      #use real totals are we are paying via paypal (spree checkout almost complete)
-      opts[:subtotal] = ((order.item_total * 100) + (order.credits.total * 100)).to_i
-      opts[:tax] = ((order.adjustments.map { |a| a.amount if ( a.source_type == 'Order' && a.label == 'Tax') }.compact.sum) * 100 ).to_i
-      opts[:shipping] = ((order.adjustments.map { |a| a.amount if a.source_type == 'Shipment' }.compact.sum) * 100 ).to_i
-
+    elsif stage == "payment"
       #hack to add float rounding difference in as handling fee - prevents PayPal from rejecting orders
       #because the integer totals are different from the float based total. This is temporary and will be
       #removed once Spree's currency values are persisted as integers (normally only 1c)
       opts[:handling] =  (order.total*100).to_i - opts.slice(:subtotal, :tax, :shipping).values.sum
-
-      opts[:money] = (order.total*100).to_i
     end
 
     opts
@@ -374,4 +357,6 @@ module Spree::PaypalExpress
   def paypal_gateway
     payment_method.provider
   end
+
 end
+
