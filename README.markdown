@@ -19,6 +19,15 @@ This extension follows the documented flow for a PayPal Express Checkout, where 
 the order (possibly select / change shipping address and method), then the user is redirected back to Spree to confirm the order. The user
 MUST confirm the order on the Spree site before the payment is authorized / captured from PayPal (and the order is transitioned to the New state).
 
+
+Versions
+========
+
+The master branch of this repo is currently for Spree 0.40.3 and later, the master branch may work with 0.30.x versions of Spree but it is not tested.
+
+The legacy 0.11.x version of this extension is available in the [0-11-x](https://github.com/spree/spree_paypal_express/tree/0-11-x) branch.
+
+
 IPN & eCheck Support
 ===================
 eCheck payments are now fully supported and PayPal's Instant Payment Notification service is also supported for receiving updates relating to eCheck payments only. To configure eCheck payments you'll need to:
