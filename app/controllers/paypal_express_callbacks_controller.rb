@@ -2,6 +2,8 @@ class PaypalExpressCallbacksController < Spree::BaseController
   include ActiveMerchant::Billing::Integrations
   skip_before_filter :verify_authenticity_token
 
+  ssl_required
+
   def notify
     retrieve_details #need to retreive details first to ensure ActiveMerchant gets configured correctly.
 

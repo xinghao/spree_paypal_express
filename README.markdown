@@ -10,108 +10,127 @@ This extension allows the store to use PayPal Express from two locations:
   options on the payment stage of the standard checkout. The selected shipping address and shipping method / costs are automatically
   sent to the PayPal review page (along with detailed order information).
 
-  THIS FEATURE IS NOT YET COMPLETE
-
-  2. Cart Checkout - Presents the PayPal checkout button on the users Cart page and redirects the user to complete all shipping / addressing
-  information on PaypPal's site. This also supports PayPal's Instant Update feature to retrieve shipping options live from Spree when the user
-  selects / changes their shipping address on PayPal's site.
+  
+  2. Cart Checkout (THIS FEATURE IS NOT YET COMPLETE) - Presents the PayPal checkout button on the users Cart page and redirects the user to complete
+  all shipping / addressing information on PaypPal's site. This also supports PayPal's Instant Update feature to retrieve shipping options live from 
+  Spree when the user selects / changes their shipping address on PayPal's site.
 
 This extension follows the documented flow for a PayPal Express Checkout, where a user is forwarded to PayPal to allow them to login and review
 the order (possibly select / change shipping address and method), then the user is redirected back to Spree to confirm the order. The user
 MUST confirm the order on the Spree site before the payment is authorized / captured from PayPal (and the order is transitioned to the New state).
 
-USAGE (Checkout Payment)
-========================
+IPN & eCheck Support
+===================
+eCheck payments are now fully supported and PayPal's Instant Payment Notification service is also supported for receiving updates relating to eCheck payments only. To configure eCheck payments you'll need to:
 
-1. Setup your application
-     
-2. Configure PPE
+###1. Install & Configure the extension (see Installation and Configuration sections below).
 
-    You'll need to have a Paypal developer account (developer.paypal.com) and both buyer and seller test accounts.
-  
-    Tip: these are sandbox only, so use email addresses and passwords that are easy to  remember, e.g. buyer@example.com and seller@example.com.
-  
-    Your sandbox credentials are available from the API Credentials link.
-  
-    Start your app
-  
-        http://localhost:3000/admin/payment_methods/new
-  
-    Name: Paypal Express
-  
-    Environment: Development
-  
-    Active: Yes
-  
-    Provider: BillingIntegration::PaypalExpress
-  
-    Create
-  
-    Now add your credentials in the screen that follows
-  
-    review: unchecked [1]
-  
-    Signature: signature from your paypal seller test account
-  
-    Server: test
-  
-    Test Mode: checked
-  
-    Password: API Password from your paypal seller test account
-  
-    Login: API Username from your paypal seller test account
-  
-    Update
+###2. Configure your PayPal account to accept eCheck payments (under Profile on PayPal's website).
 
-3. Test it
+###3. Set the IPN URL on your PayPal account (under Profile on PayPal's website) to:
 
-    Add an item to cart
-  
-    Check out
-  
-    Address step: complete it using a valid US address. (Use Sean Schofield's from the railsdog site ;))
-  
-    Delivery step: pick anything
-  
-    Payment step: pick Paypal Express. If this does not show up as an option, repeat Step 3. 
-  
-    The Check out with PayPal button should appear.
-  
-    Make sure you're logged into your paypal developer account in another browser window before clicking it, as you'll be redirected to your test account (same browser, new window or tab).
-  
-    On Paypal's site (your previously configured Seller test account), log in as the Buyer. 
-  
-    If you set up a test buyer account as buyer@example.com previously, use this now.
-  
-    You should now see the paypal order details screen with a Pay Now button.
-  
-    Click Pay Now
-  
-    You should now see the spree apps thank you for your order page
-  
+     https://www.yourstore.com/paypal_notify
 
-4. Check the payment
+###4. Enable auto_capture within Spree (as eCheck payments are only supported for purchase and not authorize requests).
 
-        http://localhost:3000/admin/orders
+     Spree::Config.set(:auto_capture => true)
+
+
+Installation
+============
+
+###1. Add the following line to your application's Gemfile
+
+     gem "spree_paypal_express", :git => "git://github.com/spree/spree_paypal_express.git"
+
+**Note:** The :git option is only required for the edge version, and can be removed to used the released gem.
+
+###2. Run bundler
+
+      bundle install
+
+###3. Copy assets / migrations
+
+      rake spree_paypal_express:install
+
+###4. Run migration
+
+      rake db:migrate
+
+
+Configuration
+=============
+###1. Before you begin
   
-    Edit your new order
+You'll need to have a Paypal developer account (developer.paypal.com) and both buyer and seller test accounts.
   
-    Go to the Payments section from the right hand menu
+**Tip:** these are sandbox only, so use email addresses and passwords that are easy to  remember, e.g. buyer@example.com and seller@example.com.
   
-    Pending Payments should show Paypal Express with the options of Show and Capture
+Your sandbox credentials are available from the API Credentials link.
+
+###2. Setup the Payment Method
   
-    Click Show and look over the info available
+Log in as an admin and add a new **Payment Method** (under Configuration), using following details:
+
+**Name:** Paypal Express
   
-    The payment has status Pending with a successful authorization
+**Environment:** Development (or what ever environment you prefer)
   
-    Back to Payments
+**Active:** Yes
   
-    This time click Capture, then OK
+**Provider:** BillingIntegration::PaypalExpress
   
-    Click Show to see what's changed. 
+Click **Create* , and now add your credentials in the screen that follows:
   
-    You should now see two transactions, the previous Authorize transaction and a new Capture one with status Completed
-    
+**Review:** unchecked [1]
+  
+**Signature:** API signature from your paypal seller test account
+  
+**Server:** test (for Development or live for Production)
+  
+**Test Mode:** checked (or unchecked for Production)
+  
+**Password:** API Password from your paypal seller test account
+  
+**Login:** API Username from your paypal seller test account (care to use the API Username and not the Test Account address)
+  
+Click **Update**
+
+Test Drive
+==========
+
+While testing PayPal Express checkout locally make sure you're logged into your PayPal **developer** account in another browser window before attempting a PayPal payment, as you'll be redirected and forced to sign in to your developer account.
+
+1. Add an item to cart
+  
+2. Check out
+  
+3. Address step: complete it using a valid US address.
+  
+4. Delivery step: pick anything
+  
+5. On the Payment Step, you should see a PayPal button. You can select it directly or just click "Continue"
+  
+6. You will get redirected to PayPals sandbox site, be sure to log in as a **Buyer** / **Personal** test account and not the account you use to configure the Payment Method with. 
+  
+7. You should now see the paypal order details screen with a Pay Now button.
+  
+8. Click Pay Now, and you should now be redirected back to Spree's order thank you page.
+  
+9. Log into the Admin UI and review the Order and Payment details to confirm the successful checkout.
+
+
+Running Specs
+=============
+
+###1. Create Test App
+
+    rake test_app
+
+###2. Run Specs
+
+    rake spec
+
 NOTES
 =====
     
