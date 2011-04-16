@@ -88,6 +88,7 @@ CheckoutController.class_eval do
         order_ship_address.save!
 
         @order.ship_address = order_ship_address
+        @order.bill_address = order_ship_address unless @order.bill_address
       end
       @order.save
 
@@ -201,7 +202,7 @@ CheckoutController.class_eval do
     { :description             => "Goods from #{Spree::Config[:site_name]}", # site details...
 
       #:page_style             => "foobar", # merchant account can set named config
-      :header_image            => "https://#{Spree::Config[:site_name]}/images/logo.png",
+      :header_image            => "https://#{Spree::Config[:site_url]}#{Spree::Config[:logo]}",
       :background_color        => "ffffff",  # must be hex only, six chars
       :header_background_color => "ffffff",
       :header_border_color     => "ffffff",
@@ -225,7 +226,7 @@ CheckoutController.class_eval do
     items = order.line_items.map do |item|
       price = (item.price * 100).to_i # convert for gateway
       { :name        => item.variant.product.name,
-        :description => item.variant.product.description[0..120],
+        :description => (item.variant.product.description[0..120] if item.variant.product.description),
         :sku         => item.variant.sku,
         :quantity    => item.quantity,
         :amount      => price,
@@ -261,7 +262,9 @@ CheckoutController.class_eval do
              :tax               => ((order.adjustments.map { |a| a.amount if ( a.source_type == 'Order' && a.label == 'Tax') }.compact.sum) * 100 ).to_i,
              :shipping          => ((order.adjustments.map { |a| a.amount if a.source_type == 'Shipment' }.compact.sum) * 100 ).to_i,
              :money             => (order.total * 100 ).to_i }
-
+             
+      # add correct tax amount by subtracting subtotal and shipping otherwise tax = 0 -> need to check adjustments.map
+      opts[:tax] = (order.total*100).to_i - opts.slice(:subtotal, :shipping).values.sum
 
     if stage == "checkout"
       opts[:handling] = 0
