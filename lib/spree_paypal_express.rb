@@ -3,6 +3,7 @@ require 'spree_paypal_express_hooks'
 
 module SpreePaypalExpress
   class Engine < Rails::Engine
+    engine_name 'spree_paypal_express'
 
     config.autoload_paths += %W(#{config.root}/lib)
 
