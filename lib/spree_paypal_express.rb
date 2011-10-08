@@ -1,5 +1,4 @@
 require 'spree_core'
-require 'spree_paypal_express_hooks'
 
 module SpreePaypalExpress
   class Engine < Rails::Engine
