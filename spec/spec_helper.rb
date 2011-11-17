@@ -1,7 +1,7 @@
 # This file is copied to ~/spec when you run 'ruby script/generate rspec'
 # from the project root directory.
 ENV["RAILS_ENV"] ||= 'test'
-require File.expand_path("../test_app/config/environment", __FILE__)
+require File.expand_path("../dummy/config/environment", __FILE__)
 require 'rspec/rails'
 
 #include spree's factories
@@ -31,10 +31,10 @@ RSpec.configure do |config|
   config.use_transactional_fixtures = true
 end
 
-Zone.class_eval do
+Spree::Zone.class_eval do
   def self.global
     find_by_name("GlobalZone") || Factory(:global_zone)
   end
 end
 
-@configuration ||= AppConfiguration.find_or_create_by_name("Default configuration")
+@configuration ||= Spree::AppConfiguration.find_or_create_by_name("Default configuration")

@@ -1,69 +1,31 @@
-# encoding: utf-8
-require 'rubygems'
 require 'rake'
 require 'rake/testtask'
+require 'rake/packagetask'
+require 'rubygems/package_task'
+require 'rspec/core/rake_task'
+require 'cucumber/rake/task'
+require 'spree_core/testing_support/common_rake'
 
-desc "Default Task"
-task :default => [ :spec ]
+RSpec::Core::RakeTask.new
+Cucumber::Rake::Task.new
 
-gemfile = File.expand_path('../spec/test_app/Gemfile', __FILE__)
-if File.exists?(gemfile) && %w(rcov spec cucumber).include?(ARGV.first.to_s)
-  require 'bundler'
-  ENV['BUNDLE_GEMFILE'] = gemfile
-  Bundler.setup
+task :default => [:spec, :cucumber ]
 
-  require 'rspec/core/rake_task'
-  RSpec::Core::RakeTask.new
+spec = eval(File.read('spree_paypal_express.gemspec'))
 
-  require 'cucumber/rake/task'
-  Cucumber::Rake::Task.new do |t|
-    t.cucumber_opts = %w{--format pretty}
-  end
-
-  desc "Run specs with RCov"
-  RSpec::Core::RakeTask.new(:rcov) do |t|
-    t.rcov = true
-    t.rcov_opts = %w{ --exclude gems\/,spec\/,features\/}
-    t.verbose = true
-  end
-
+Gem::PackageTask.new(spec) do |p|
+  p.gem_spec = spec
 end
 
-desc "Regenerates a rails 3 app for testing"
+desc "Release to gemcutter"
+task :release => :package do
+  require 'rake/gemcutter'
+  Rake::Gemcutter::Tasks.new(spec).define
+  Rake::Task['gem:push'].invoke
+end
+
+desc "Generates a dummy app for testing"
 task :test_app do
-  SPREE_PATH = ENV['SPREE_PATH']
-  raise "SPREE_PATH should be specified" unless SPREE_PATH
-  require File.join(SPREE_PATH, 'lib/generators/spree/test_app_generator')
-  class AuthTestAppGenerator < Spree::Generators::TestAppGenerator
-    def tweak_gemfile
-      append_file 'Gemfile' do
-<<-gems
-gem 'spree_core', :path => '#{File.join(SPREE_PATH, 'core')}'
-gem 'spree_auth', :path => '#{File.join(SPREE_PATH, 'auth')}'
-gem 'spree_paypal_express', :path => '#{File.dirname(__FILE__)}'
-gems
-      end
-    end
-
-    def install_gems
-      inside "test_app" do
-        run 'rake spree_core:install'
-        run 'rake spree_auth:install'
-        run 'rake spree_paypal_express:install'
-      end
-    end
-
-    def migrate_db
-      run_migrations
-    end
-  end
-  AuthTestAppGenerator.start
+  ENV['LIB_NAME'] = 'spree_paypal_express'
+  Rake::Task['common:test_app'].invoke
 end
-
-namespace :test_app do
-  desc 'Rebuild test and cucumber databases'
-  task :rebuild_dbs do
-    system("cd spec/test_app && rake db:drop db:migrate RAILS_ENV=test && rake db:drop db:migrate RAILS_ENV=cucumber")
-  end
-end
-
