@@ -30,7 +30,7 @@ class PaypalExpressCallbacksController < Spree::BaseController
 
   private
     def retrieve_details
-      @order = Order.find_by_number(params["invoice"])
+      @order = Spree::Order.find_by_number(params["invoice"])
 
       if @order
         @payment = @order.payments.where(:state => "pending", :source_type => "PaypalAccount").try(:first)

@@ -14,8 +14,8 @@ module SpreePaypalExpress
 
     initializer "spree_paypal_express.register.payment_methods" do |app|
       app.config.spree.payment_methods += [
-        BillingIntegration::PaypalExpress,
-        BillingIntegration::PaypalExpressUk
+        Spree::BillingIntegration::PaypalExpress,
+        Spree::BillingIntegration::PaypalExpressUk
       ]
     end
 

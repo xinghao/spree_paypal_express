@@ -1,4 +1,4 @@
-CheckoutController.class_eval do
+Spree::CheckoutController.class_eval do
   before_filter :redirect_to_paypal_express_form_if_needed, :only => [:update]
 
   def paypal_checkout
@@ -74,12 +74,12 @@ CheckoutController.class_eval do
                                          :address1   => ship_address["address1"],
                                          :address2   => ship_address["address2"],
                                          :city       => ship_address["city"],
-                                         :country    => Country.find_by_iso(ship_address["country"]),
+                                         :country    => Spree::Country.find_by_iso(ship_address["country"]),
                                          :zipcode    => ship_address["zip"],
                                          # phone is currently blanked in AM's PPX response lib
                                          :phone      => @ppx_details.params["phone"] || "(not given)"
 
-        if (state = State.find_by_abbr(ship_address["state"]))
+        if (state = Spree::State.find_by_abbr(ship_address["state"]))
           order_ship_address.state = state
         else
           order_ship_address.state_name = ship_address["state"]
@@ -186,9 +186,9 @@ CheckoutController.class_eval do
       @order.process_coupon_code
     end
     load_order
-    payment_method = PaymentMethod.find(params[:order][:payments_attributes].first[:payment_method_id])
+    payment_method = Spree::PaymentMethod.find(params[:order][:payments_attributes].first[:payment_method_id])
 
-    if payment_method.kind_of?(BillingIntegration::PaypalExpress) || payment_method.kind_of?(BillingIntegration::PaypalExpressUk)
+    if payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress) || payment_method.kind_of?(Spree::BillingIntegration::PaypalExpressUk)
       redirect_to paypal_payment_order_checkout_url(@order, :payment_method_id => payment_method)
     end
   end
@@ -264,7 +264,7 @@ CheckoutController.class_eval do
              :tax               => ((order.adjustments.map { |a| a.amount if ( a.source_type == 'Order' && a.label == 'Tax') }.compact.sum) * 100 ).to_i,
              :shipping          => ((order.adjustments.map { |a| a.amount if a.source_type == 'Shipment' }.compact.sum) * 100 ).to_i,
              :money             => (order.total * 100 ).to_i }
-             
+
       # add correct tax amount by subtracting subtotal and shipping otherwise tax = 0 -> need to check adjustments.map
       opts[:tax] = (order.total*100).to_i - opts.slice(:subtotal, :shipping).values.sum
 
@@ -357,7 +357,7 @@ CheckoutController.class_eval do
 
   # create the gateway from the supplied options
   def payment_method
-    PaymentMethod.find(params[:payment_method_id])
+    Spree::PaymentMethod.find(params[:payment_method_id])
   end
 
   def paypal_gateway
