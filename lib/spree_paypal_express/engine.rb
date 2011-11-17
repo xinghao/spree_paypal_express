@@ -22,6 +22,10 @@ module SpreePaypalExpress
       ]
     end
 
+    ActiveSupport::Inflector.inflections do |inflect|
+      inflect.singular 'express', 'express'
+    end
+
     config.to_prepare &method(:activate).to_proc
   end
 end
