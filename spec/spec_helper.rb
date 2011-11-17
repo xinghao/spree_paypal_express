@@ -5,7 +5,7 @@ require File.expand_path("../dummy/config/environment", __FILE__)
 require 'rspec/rails'
 
 #include spree's factories
-require 'spree_core/testing_support/factories'
+require 'spree/core/testing_support/factories'
 
 # include local factories
 Dir["#{File.dirname(__FILE__)}/factories/**/*.rb"].each do |f|

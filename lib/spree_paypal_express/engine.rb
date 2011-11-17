@@ -22,6 +22,8 @@ module SpreePaypalExpress
       ]
     end
 
+    # The install generator tries to do spree_paypal_express.classify => SpreePaypalExpres
+    # This fixes that 's' from getting chopped off
     ActiveSupport::Inflector.inflections do |inflect|
       inflect.singular 'express', 'express'
     end
