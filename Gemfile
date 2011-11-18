@@ -3,11 +3,11 @@ source 'http://rubygems.org'
 gemspec
 
 gem 'sqlite3-ruby', :require => 'sqlite3'
+gem 'spree', :path => '../spree'
 
 group :test do
   gem 'rspec-rails', '= 2.7.0'
-  gem 'factory_girl', '= 1.3.3'
-  gem 'factory_girl_rails', '= 1.0.1'
+  gem 'factory_girl_rails', '= 1.3.0'
   gem 'rcov'
   gem 'shoulda'
   gem 'faker'
@@ -23,8 +23,6 @@ group :cucumber do
   gem 'database_cleaner', '~> 0.5.2'
   gem 'nokogiri'
   gem 'capybara'
-  gem 'factory_girl', '= 1.3.3'
-  gem 'factory_girl_rails', '= 1.0.1'
   gem 'faker'
   gem 'launchy'
 
