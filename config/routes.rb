@@ -1,4 +1,4 @@
-Rails.application.routes.draw do
+Spree::Core::Engine.routes.append do
   resources :orders do
     resource :checkout, :controller => 'checkout' do
       member do
