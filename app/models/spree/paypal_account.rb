@@ -1,4 +1,4 @@
-class PaypalAccount < ActiveRecord::Base
+class Spree::PaypalAccount < ActiveRecord::Base
   has_many :payments, :as => :source
 
   def actions
