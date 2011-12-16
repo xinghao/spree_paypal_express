@@ -89,7 +89,7 @@ module Spree
           order_ship_address.save!
 
           @order.ship_address = order_ship_address
-          @order.bill_address = order_ship_address unless @order.bill_address
+          @order.bill_address ||= order_ship_address
         end
         @order.save
 
