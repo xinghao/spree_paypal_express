@@ -62,23 +62,23 @@ module Spree
         # now save the updated order info
 
         Spree::PaypalAccount.create(:email => @ppx_details.params["payer"],
-                             :payer_id => @ppx_details.params["payer_id"],
-                             :payer_country => @ppx_details.params["payer_country"],
-                             :payer_status => @ppx_details.params["payer_status"])
+                                    :payer_id => @ppx_details.params["payer_id"],
+                                    :payer_country => @ppx_details.params["payer_country"],
+                                    :payer_status => @ppx_details.params["payer_status"])
 
         @order.special_instructions = @ppx_details.params["note"]
 
         unless payment_method.preferred_no_shipping
           ship_address = @ppx_details.address
           order_ship_address = Spree::Address.new :firstname  => @ppx_details.params["first_name"],
-                                           :lastname   => @ppx_details.params["last_name"],
-                                           :address1   => ship_address["address1"],
-                                           :address2   => ship_address["address2"],
-                                           :city       => ship_address["city"],
-                                           :country    => Spree::Country.find_by_iso(ship_address["country"]),
-                                           :zipcode    => ship_address["zip"],
-                                           # phone is currently blanked in AM's PPX response lib
-                                           :phone      => @ppx_details.params["phone"] || "(not given)"
+                                                  :lastname   => @ppx_details.params["last_name"],
+                                                  :address1   => ship_address["address1"],
+                                                  :address2   => ship_address["address2"],
+                                                  :city       => ship_address["city"],
+                                                  :country    => Spree::Country.find_by_iso(ship_address["country"]),
+                                                  :zipcode    => ship_address["zip"],
+                                                  # phone is currently blanked in AM's PPX response lib
+                                                  :phone      => @ppx_details.params["phone"] || "(not given)"
 
           if (state = Spree::State.find_by_abbr(ship_address["state"]))
             order_ship_address.state = state
