@@ -116,11 +116,8 @@ module Spree
       opts = { :token => params[:token], :payer_id => params[:PayerID] }.merge all_opts(@order, params[:payment_method_id], 'payment' )
       gateway = paypal_gateway
 
-      if Spree::Config[:auto_capture]
-        ppx_auth_response = gateway.purchase((@order.total*100).to_i, opts)
-      else
-        ppx_auth_response = gateway.authorize((@order.total*100).to_i, opts)
-      end
+      method = Spree::Config[:auto_capture] ? :purchase : :authorize
+      ppx_auth_response = gateway.send(method, (@order.total*100).to_i, opts)
 
       paypal_account = Spree::PaypalAccount.find_by_payer_id(params[:PayerID])
 
