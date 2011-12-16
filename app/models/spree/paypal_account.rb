@@ -8,7 +8,7 @@ class Spree::PaypalAccount < ActiveRecord::Base
   def capture(payment)
     authorization = find_authorization(payment)
 
-    ppx_response = payment.payment_method.provider.capture((100 * payment.amount).to_i, authorization.params["transaction_id"], :currency => payment.payment_method.preferred_currency)
+    ppx_response = payment.payment_method.provider.capture(amount_in_cents(payment.amount), authorization.params["transaction_id"], :currency => payment.payment_method.preferred_currency)
     if ppx_response.success?
       record_log payment, ppx_response
       payment.complete
@@ -27,7 +27,7 @@ class Spree::PaypalAccount < ActiveRecord::Base
 
     amount = payment.credit_allowed >= payment.order.outstanding_balance.abs ? payment.order.outstanding_balance : payment.credit_allowed
 
-    ppx_response = payment.payment_method.provider.credit(amount.nil? ? (100 * amount).to_i : (100 * amount).to_i, authorization.params['transaction_id'])
+    ppx_response = payment.payment_method.provider.credit(amount.nil? ? amount_in_cents(amount) : amount_in_cents(amount), authorization.params['transaction_id'])
 
     if ppx_response.success?
       record_log payment, ppx_response
@@ -95,4 +95,10 @@ class Spree::PaypalAccount < ActiveRecord::Base
     logger.error(msg)
     raise Spree::GatewayError.new(msg)
   end
+
+  private
+
+    def amount_in_cents(amount)
+      (100 * amount).to_i
+    end
 end
