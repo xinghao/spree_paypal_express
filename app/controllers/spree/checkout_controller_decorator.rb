@@ -253,8 +253,8 @@ module Spree
       end
 
       opts = { #:return_url        => request.protocol + request.host_with_port + "/spree/orders/#{order.number}/checkout/paypal_confirm?payment_method_id=#{payment_method}",
-               :return_url        => "http://"  + request.host_with_port + "/spree/orders/#{order.number}/checkout/paypal_confirm?payment_method_id=#{payment_method}",
-               :cancel_return_url => "http://"  + request.host_with_port + "/spree/orders/#{order.number}/edit",
+               :return_url        => "http://"  + request.host_with_port + "/orders/#{order.number}/checkout/paypal_confirm?payment_method_id=#{payment_method}",
+               :cancel_return_url => "http://"  + request.host_with_port + "/orders/#{order.number}/edit",
                :order_id          => order.number,
                :custom            => order.number,
                :items             => items,
