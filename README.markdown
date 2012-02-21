@@ -63,12 +63,7 @@ Installation
 
 ###3. Copy assets / migrations
 
-      rake spree_paypal_express:install
-
-###4. Run migration
-
-      rake db:migrate
-
+      rails g spree_paypal_express:install
 
 Configuration
 =============
@@ -90,7 +85,7 @@ Log in as an admin and add a new **Payment Method** (under Configuration), using
   
 **Active:** Yes
   
-**Provider:** BillingIntegration::PaypalExpress
+**Provider:** Spree::BillingIntegration::PaypalExpress
   
 Click **Create* , and now add your credentials in the screen that follows:
   
@@ -149,7 +144,7 @@ NOTES
 To automatically capture funds or enable accepting eCheck payments, add this to you site extension's activate method:
 
     if Spree::Config.instance
-      Spree::Config.set(:auto_capture => true)
+      Spree::Config[:auto_capture] = true
     end
     
 [1] If you check the review checkbox in the admin section for Payment Methods/Paypal Express, the flow is slightly different. Instead of Pay Now on Paypal's order details page, it now says Continue. And the user is directed back to the spree app's Confirmation page showing a place order button. Use whichever suits your needs best. Personally, I leave review unchecked to cut down on the steps in the checkout flow.
