@@ -1,3 +1,4 @@
+module Spree::PaypalExpress; end
 module SpreePaypalExpress
   class Engine < Rails::Engine
     engine_name 'spree_paypal_express'
@@ -7,6 +8,10 @@ module SpreePaypalExpress
     # use rspec for tests
     config.generators do |g|
       g.test_framework :rspec
+    end
+
+    initializer "spree.paypal_express.preferences", :before => :load_config_initializers do |app|
+      Spree::PaypalExpress::Config = Spree::PaypalExpressConfiguration.new
     end
 
     def self.activate

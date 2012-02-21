@@ -192,10 +192,10 @@ module Spree
     end
 
     def fixed_opts
-      if Spree::Config[:paypal_express_local_confirm].nil?
+      if Spree::PaypalExpress::Config[:paypal_express_local_confirm].nil?
         user_action = "continue"
       else
-        user_action = Spree::Config[:paypal_express_local_confirm] == "t" ? "continue" : "commit"
+        user_action = Spree::PaypalExpress::Config[:paypal_express_local_confirm] == "t" ? "continue" : "commit"
       end
 
       { :description             => "Goods from #{Spree::Config[:site_name]}", # site details...
