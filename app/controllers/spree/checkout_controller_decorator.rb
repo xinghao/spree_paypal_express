@@ -155,8 +155,9 @@ module Spree
         end
 
         flash[:notice] = I18n.t(:order_processed_successfully)
-        redirect_to completion_route
-
+        #redirect_to completion_route
+        redirect_to order_path(@order, :checkout_complete => "true")
+        
       else
         payment.fail!
         order_params = {}
