@@ -155,6 +155,8 @@ module Spree
         end
 
         flash[:notice] = I18n.t(:order_processed_successfully)
+        flash[:commerce_tracking] = "nothing special"
+        Rails.logger.info("paypal set1FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF: " + flash[:commerce_tracking].to_s);
         #redirect_to completion_route
         redirect_to order_path(@order, :checkout_complete => "true")
         
