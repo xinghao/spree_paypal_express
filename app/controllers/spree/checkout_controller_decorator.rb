@@ -51,17 +51,13 @@ module Spree
     end
 
     def paypal_confirm
-      Rails.logger.info("1. hello there. in paypal_confirm function, before load_order")
       load_order
-      Rails.logger.info("2. hello there. in paypal_confirm function, after load_order")
       opts = { :token => params[:token], :payer_id => params[:PayerID] }.merge all_opts(@order, params[:payment_method_id],  'payment')
       gateway = paypal_gateway
 
       @ppx_details = gateway.details_for params[:token]
-Rails.logger.info("3. hello there. in paypal_confirm function, ")
       if @ppx_details.success?
         # now save the updated order info
-Rails.logger.info("4. hello there. in paypal_confirm function, ")
         Spree::PaypalAccount.create(:email => @ppx_details.params["payer"],
                                     :payer_id => @ppx_details.params["payer_id"],
                                     :payer_country => @ppx_details.params["payer_country"],
@@ -81,7 +77,7 @@ Rails.logger.info("4. hello there. in paypal_confirm function, ")
                                                   # phone is currently blanked in AM's PPX response lib
                                                   :phone      => @ppx_details.params["phone"] || "(not given)"
 
-          if (state = Spree::State.find_by_abbr(ship_address["state"]))
+          if (state = Spree::State.find_by_abbr(ship_address["state"].upcase))
             order_ship_address.state = state
           else
             order_ship_address.state_name = ship_address["state"]
@@ -101,14 +97,12 @@ Rails.logger.info("4. hello there. in paypal_confirm function, ")
         end
 
       else
-        Rails.logger.info("6. hello there. in paypal_confirm function, ")
         gateway_error(@ppx_details)
 
         #Failed trying to get payment details from PPX
         redirect_to edit_order_checkout_url(@order, :state => "payment")
       end
     rescue ActiveMerchant::ConnectionError => e
-      Rails.logger.info("7. hello there. in paypal_confirm function, ")
       gateway_error I18n.t(:unable_to_connect_to_gateway)
       redirect_to edit_order_url(@order)
     end
