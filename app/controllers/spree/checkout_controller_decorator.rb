@@ -197,6 +197,15 @@ module Spree
         user_action = Spree::PaypalExpress::Config[:paypal_express_local_confirm] == "t" ? "continue" : "commit"
       end
 
+      if ( Spree::Config[:logo] =~ /^\// && Spree::Config[:site_url] =~ /\/$/ )
+        logo_without_begining_slash =  Spree::Config[:logo].gsub(/^\//, "")
+        h_image = "#{Spree::Config[:site_url]}/#{logo_without_begining_slash}"
+      elsif( !(Spree::Config[:logo] =~ /^\//) && !(Spree::Config[:site_url] =~ /\/$/))
+        h_image = "#{Spree::Config[:site_url]}/#{Spree::Config[:logo]}"
+      else
+        h_image = "#{Spree::Config[:site_url]}#{Spree::Config[:logo]}"        
+      end  
+      
       { :description             => "Goods from #{Spree::Config[:site_name]}", # site details...
 
         #:page_style             => "foobar", # merchant account can set named config
