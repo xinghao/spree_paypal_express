@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.name        = 'spree_paypal_express'
-  s.version     = '1.1.3'
+  s.version     = '1.1.4'
   s.summary     = 'Adds PayPal Express as a Payment Method to Spree store'
   s.homepage    = 'http://www.spreecommerce.com'
   s.author      = 'Spree Commerce'

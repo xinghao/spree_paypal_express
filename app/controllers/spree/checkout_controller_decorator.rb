@@ -197,13 +197,13 @@ module Spree
         user_action = Spree::PaypalExpress::Config[:paypal_express_local_confirm] == "t" ? "continue" : "commit"
       end
 
-      if ( Spree::Config[:logo] =~ /^\// && Spree::Config[:site_url] =~ /\/$/ )
+      if ( Spree::Config[:logo_at_paypal] =~ /^\// && Spree::Config[:site_url] =~ /\/$/ )
         logo_without_begining_slash =  Spree::Config[:logo].gsub(/^\//, "")
         h_image = "#{Spree::Config[:site_url]}/#{logo_without_begining_slash}"
-      elsif( !(Spree::Config[:logo] =~ /^\//) && !(Spree::Config[:site_url] =~ /\/$/))
-        h_image = "#{Spree::Config[:site_url]}/#{Spree::Config[:logo]}"
+      elsif( !(Spree::Config[:logo_at_paypal] =~ /^\//) && !(Spree::Config[:site_url] =~ /\/$/))
+        h_image = "#{Spree::Config[:site_url]}/#{Spree::Config[:logo_at_paypal]}"
       else
-        h_image = "#{Spree::Config[:site_url]}#{Spree::Config[:logo]}"        
+        h_image = "#{Spree::Config[:site_url]}#{Spree::Config[:logo_at_paypal]}"        
       end  
       
       { :description             => "Goods from #{Spree::Config[:site_name]}", # site details...
