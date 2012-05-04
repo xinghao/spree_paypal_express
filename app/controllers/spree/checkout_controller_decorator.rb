@@ -65,7 +65,7 @@ module Spree
 
         @order.special_instructions = @ppx_details.params["note"]
 
-        unless payment_method.preferred_no_shipping
+        if !payment_method.preferred_no_shipping && Spree::Config[:shipping_address_override] == 0
           ship_address = @ppx_details.address
           order_ship_address = Spree::Address.new :firstname  => @ppx_details.params["first_name"],
                                                   :lastname   => @ppx_details.params["last_name"],
@@ -293,7 +293,7 @@ module Spree
       else
         {
           :no_shipping => false,
-          :address_override => false,
+          :address_override => Spree::Config[:shipping_address_override],
           :address => {
             :name       => "#{order.ship_address.firstname} #{order.ship_address.lastname}",
             :address1   => order.ship_address.address1,
