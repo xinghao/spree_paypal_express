@@ -293,7 +293,7 @@ module Spree
       else
         {
           :no_shipping => false,
-          :address_override => true,
+          :address_override => false,
           :address => {
             :name       => "#{order.ship_address.firstname} #{order.ship_address.lastname}",
             :address1   => order.ship_address.address1,
