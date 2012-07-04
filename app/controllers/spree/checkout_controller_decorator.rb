@@ -176,18 +176,42 @@ module Spree
     end
 
     def redirect_to_paypal_express_form_if_needed
+      logger.debug ":::PAYPALEXPRESS-REDIRECT::: #{params[:state]}"
       return unless (params[:state] == "payment")
-      return unless params[:order][:payments_attributes]
-      if params[:order][:coupon_code]
-        @order.update_attributes(object_params)
-        @order.process_coupon_code
+      #return unless params[:order][:payments_attributes]
+      
+      if @order.update_attributes(object_params)
+        if params[:order][:coupon_code] and !params[:order][:coupon_code].blank? and @order.coupon_code.present?
+          fire_event('spree.checkout.coupon_code_added', :coupon_code => @order.coupon_code)
+          logger.debug ":::COUPON ADDED::: #{@order.coupon_code}"
+        end
       end
+      
+      # if params[:order][:coupon_code]
+      #         @order.update_attributes(object_params)
+      #         @order.process_coupon_code
+      #         logger.debug ":::PROCESS COUPON::: #{@order.coupon_code}"
+      #       end
+      
       load_order
-      payment_method = Spree::PaymentMethod.find(params[:order][:payments_attributes].first[:payment_method_id])
-
-      if payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress) || payment_method.kind_of?(Spree::BillingIntegration::PaypalExpressUk)
-        redirect_to paypal_payment_order_checkout_url(@order, :payment_method_id => payment_method)
+      payment_method = get_PaypalID(@order)
+      
+      if !payment_method.blank? and payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress)
+        logger.debug ":::REDIRECT:::"
+        redirect_to(paypal_payment_order_checkout_url @order, :payment_method_id => payment_method) and return
       end
+      
+      # payment_method = Spree::PaymentMethod.find(params[:order][:payments_attributes].first[:payment_method_id])
+      # 
+      #       if payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress) || payment_method.kind_of?(Spree::BillingIntegration::PaypalExpressUk)
+      #         logger.debug ":::REDIRECT::: #{paypal_payment_order_checkout_url} || #{payment_method}"
+      #         redirect_to paypal_payment_order_checkout_url(@order, :payment_method_id => payment_method)
+      #       end
+    end
+    
+    def get_PaypalID(order)
+      paypal = order.available_payment_methods.first
+      return paypal
     end
 
     def fixed_opts
