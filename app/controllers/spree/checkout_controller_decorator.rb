@@ -176,18 +176,55 @@ module Spree
     end
 
     def redirect_to_paypal_express_form_if_needed
+      logger.debug ":::PAYPALEXPRESS REDIRECT:::"
       return unless (params[:state] == "payment")
-      return unless params[:order][:payments_attributes]
-      if params[:order][:coupon_code]
-        @order.update_attributes(object_params)
-        @order.process_coupon_code
-      end
-      load_order
-      payment_method = Spree::PaymentMethod.find(params[:order][:payments_attributes].first[:payment_method_id])
+      #return unless params[:order][:payments_attributes]
 
-      if payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress) || payment_method.kind_of?(Spree::BillingIntegration::PaypalExpressUk)
-        redirect_to paypal_payment_order_checkout_url(@order, :payment_method_id => payment_method)
+      if @order.update_attributes(object_params)
+        logger.debug ":::COUPON UPDATING::: #{@order.coupon_code}"
+        if params[:order][:coupon_code] and !params[:order][:coupon_code].blank? and @order.coupon_code.present?   
+          
+          #Find the coupon
+          promotion = Spree::Promotion.find_by_code @order.coupon_code
+          
+          if !promotion.blank?
+            if promotion.eligible?(@order)
+              fire_event('spree.checkout.coupon_code_added', :coupon_code => @order.coupon_code)
+              logger.debug ":::COUPON IS ELIGIBLE:::"
+            else
+              logger.debug ":::COUPON NOT ELIGIBLE:::"
+              try_coupon_again("Sorry that coupon is not active anymore.")
+              return
+            end
+          else
+            logger.debug ":::COUPON NOT FOUND:::"
+            try_coupon_again("Sorry we can't find a coupon like that.")
+            return
+          end
+          
+        end
       end
+
+      load_order
+      payment_method = get_PaypalID(@order)
+
+      #Redirect to Paypal if payment method is paypal
+      if !payment_method.blank? and payment_method.kind_of?(Spree::BillingIntegration::PaypalExpress)
+        logger.debug ":::REDIRECTING:::"
+        redirect_to(paypal_payment_order_checkout_url @order, :payment_method_id => payment_method) and return
+      end
+
+    end
+    
+    #Send the user back to the payment form to enter a new coupon code
+    def try_coupon_again(msg = "Something went wrong applying that coupon.")
+     redirect_to edit_order_checkout_url(@order, :state => "payment")
+     flash[:error] = msg
+    end
+    
+    def get_PaypalID(order)
+      paypal = order.available_payment_methods.first
+      return paypal
     end
 
     def fixed_opts
@@ -242,7 +279,7 @@ module Spree
           :depth       => item.variant.weight }
         end
 
-      credits = order.adjustments.map do |credit|
+      credits = order.adjustments.eligible.map do |credit|
         if credit.amount < 0.00
           { :name        => credit.label,
             :description => credit.label,
